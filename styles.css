@@ -38,6 +38,7 @@ header {
     max-width: 100%;
     font-size: calc(100%/1);
     overflow-wrap: break-word;
+    font-size: 2rem;
 }
 
 .temp-result {
