@@ -21,6 +21,7 @@ function multiply(a, b){
 }
 
 function divide(a, b){
+    if(b == 0){return 'Dummy'}
     return a/b
 }
 
@@ -41,27 +42,34 @@ function operate(sign, num1, num2){
 function keyPress(e){
     const valButton = document.querySelector(`button[data-key="${e.keyCode}"]`)
     if(!valButton){return}
-    const event = new MouseEvent('click', {view:window})
+    const event = new MouseEvent('click')
     valButton.dispatchEvent(event)
 }
 
 function buttonPress(e){
     equation.textContent += this.textContent
     fontSizeAdjust(equation)
-    tempResult.textContent = numOperatorAction(this.classList[0], this.textContent)
+    tempResult.textContent = handleDecimalDisplay(numOperatorAction(this.classList[0], this.textContent))
+}
+
+function handleDecimalDisplay(x){
+    if(!x){return ''}
+    if(!(String(x).includes('.'))){return x}
+    let decPos = String(x).indexOf('.')
+    let retStr = String(x).substring(0, decPos+6) // include a max of five digits in the display
+    
 }
 
 function evalEquation(opList, numList){
     let retNum
     for(let i=0; i < opList.length; i++){
-        if((i == opList.length - 1) && (ops.length != nums.length+1)){
-            retNum = operate(opList[i], retNum || numList[i], parseInt(tempNum))
+        if((i == opList.length - 1) && (opList.length != numList.length+1)){
+            retNum = operate(opList[i], retNum ?? numList[i], parseFloat(tempNum) ?? numList[i+1])
         }
         else{
             retNum = operate(opList[i], retNum || numList[i], numList[i+1])
         }
     }
-
     return retNum
 }
 
@@ -69,7 +77,7 @@ function numOperatorAction(bType, char){
     if (bType == 'operator'){
         tempResult.textContent = ''
         ops.push(char)
-        nums.push(parseInt(tempNum))
+        nums.push(parseFloat(tempNum))
         tempNum = ''
         return ''
     }
@@ -77,10 +85,10 @@ function numOperatorAction(bType, char){
         tempNum += char
         return evalEquation(ops, nums)
     }
+    return '' // This shouldn't ever be used
 }
 
 function equalsPress(e){
-    e.preventDefault()
     if(isNaN(equation.textContent.slice(-1))){return} // disable button if last entered button is not a number
     equation.textContent = `${tempResult.textContent}`
     tempResult.textContent = ''
@@ -94,17 +102,22 @@ function backspacePress(e){
     equation.textContent = equation.textContent.slice(0, equation.textContent.length-1)
     remChar = tempNum.slice(-1)
     tempNum = tempNum.slice(0, tempNum.length - 1)
-    if(isNaN(parseInt(remChar))){
+    if(isNaN(parseFloat(remChar))){
         ops.pop()
         tempResult.textContent = evalEquation(ops, nums)
     }
-    else if(isNaN(parseInt(tempNum.slice(-1)))){
+    else if(isNaN(parseFloat(tempNum.slice(-1)))){
         tempResult.textContent = ''
-        nums = equation.textContent.split(/[+-\/\*]/).filter(x => x).map(x => parseInt(x))
+        nums = equation.textContent.split(/[+−÷\*]/).filter(x => x).map(x => parseFloat(x))
     }
     else{
         tempResult.textContent = evalEquation(ops, nums)
     }
+}
+
+function decimalPress(e){
+    tempNum += this.textContent
+    equation.textContent += this.textContent
 }
 
 // Button event listeners for basic calculating
@@ -118,9 +131,10 @@ operators.forEach(element => element.addEventListener('click', buttonPress))
 
 document.querySelector('.equals').addEventListener('click', equalsPress)
 document.querySelector('.backspace').addEventListener('click', backspacePress)
+document.querySelector('.decimal').addEventListener('click', decimalPress)
 
 // Clear button
-function clearScreen(){
+function clearScreen(e){
     equation.textContent = ''
     tempResult.textContent = ''
     priorOffsetHeight = 0
@@ -128,6 +142,8 @@ function clearScreen(){
     nums = []
     tempNum = ''
     equation.style.fontSize = '2rem'
+    console.log('Hi')
+    document.querySelector('.clear').blur()
 }
 
 document.querySelector('.clear').addEventListener('click', clearScreen)
