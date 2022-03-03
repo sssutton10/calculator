@@ -4,6 +4,7 @@
 let equation = document.querySelector('.equation')
 let tempResult = document.querySelector('.temp-result')
 let tempNum = '' // Storing the number being typed to allow for multi-digit numbers
+let fullNum // Store full, unrounded number so there aren't issues with calculating rounded numbers
 let ops = [] // Push operators and numbers to respective arrays as typed, pop when deleting
 let nums = []
 let priorOffsetHeight = 0 // For checking if text wraps - if so then half size
@@ -54,10 +55,10 @@ function buttonPress(e){
 
 function handleDecimalDisplay(x){
     if(!x){return ''}
+    fullNum = x // For avoiding rounding issues
     if(!(String(x).includes('.'))){return x}
-    let decPos = String(x).indexOf('.')
-    let retStr = String(x).substring(0, decPos+6) // include a max of five digits in the display
-    
+    // let decPos = String(x).indexOf('.')
+    return Math.round(x*100000)/100000// include a max of five digits in the display
 }
 
 function evalEquation(opList, numList){
@@ -89,12 +90,12 @@ function numOperatorAction(bType, char){
 }
 
 function equalsPress(e){
-    if(isNaN(equation.textContent.slice(-1))){return} // disable button if last entered button is not a number
+    if(isNaN(equation.textContent.slice(-1)) || tempResult.textContent == ''){return} // disable button if last entered button is not a number
     equation.textContent = `${tempResult.textContent}`
     tempResult.textContent = ''
     ops = []
     nums = []
-    tempNum = equation.textContent
+    tempNum = fullNum
     equation.style.fontSize = '2rem'
 }
 
