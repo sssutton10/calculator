@@ -8,6 +8,7 @@ let fullNum // Store full, unrounded number so there aren't issues with calculat
 let ops = [] // Push operators and numbers to respective arrays as typed, pop when deleting
 let nums = []
 let priorOffsetHeight = 0 // For checking if text wraps - if so then half size
+let positiveMessage = false
 
 function add(a, b){
     return a+b
@@ -48,16 +49,16 @@ function keyPress(e){
 }
 
 function buttonPress(e){
+    if(positiveMessage){return}
     equation.textContent += this.textContent
     fontSizeAdjust(equation)
     tempResult.textContent = handleDecimalDisplay(numOperatorAction(this.classList[0], this.textContent))
 }
 
 function handleDecimalDisplay(x){
-    if(!x){return ''}
+    if(!x && x != 0){return ''}
     fullNum = x // For avoiding rounding issues
     if(!(String(x).includes('.'))){return x}
-    // let decPos = String(x).indexOf('.')
     return Math.round(x*100000)/100000// include a max of five digits in the display
 }
 
@@ -90,35 +91,71 @@ function numOperatorAction(bType, char){
 }
 
 function equalsPress(e){
+    if(positiveMessage){return}
     if(isNaN(equation.textContent.slice(-1)) || tempResult.textContent == ''){return} // disable button if last entered button is not a number
     equation.textContent = `${tempResult.textContent}`
     tempResult.textContent = ''
     ops = []
     nums = []
-    tempNum = fullNum
+    tempNum = String(fullNum)
+    returnLength = []
     equation.style.fontSize = '2rem'
 }
 
 function backspacePress(e){
+    if(positiveMessage){return}
+
     equation.textContent = equation.textContent.slice(0, equation.textContent.length-1)
     remChar = tempNum.slice(-1)
     tempNum = tempNum.slice(0, tempNum.length - 1)
-    if(isNaN(parseFloat(remChar))){
-        ops.pop()
-        tempResult.textContent = evalEquation(ops, nums)
+    if(remChar == '.'){
+        tempResult.textContent = handleDecimalDisplay(evalEquation(ops, nums)) // for good measure
     }
-    else if(isNaN(parseFloat(tempNum.slice(-1)))){
+    else if(isNaN(parseFloat(remChar))){
+        ops.pop()
+        tempResult.textContent = handleDecimalDisplay(evalEquation(ops, nums))
+    }
+    else if(isNaN(parseFloat(tempNum.slice(-1))) && tempNum.slice(-1) != '.'){
         tempResult.textContent = ''
         nums = equation.textContent.split(/[+−÷\*]/).filter(x => x).map(x => parseFloat(x))
     }
     else{
-        tempResult.textContent = evalEquation(ops, nums)
+        tempResult.textContent = handleDecimalDisplay(evalEquation(ops, nums))
     }
+    fontSizeAdjust(equation)
 }
 
 function decimalPress(e){
+    if(positiveMessage){return}
+    if(equation.textContent.includes('.')){return}
     tempNum += this.textContent
     equation.textContent += this.textContent
+}
+
+function negativePress(e){
+    if(positiveMessage){return}
+    if(equation.textContent.slice(-1).match(/[0-9]/)){return}
+    equation.textContent += '-'
+    tempNum += '-'
+}
+
+function happyPress(e){
+    let randNum = Math.floor(Math.random() * 4)
+    switch (randNum){
+        case 0:
+            equation.textContent = 'Hello There!'
+            break
+        case 1:
+            equation.textContent = 'You rock!'
+            break
+        case 2:
+            equation.textContent = 'Keep your head up!'
+            break
+        case 3:
+            equation.textContent = 'Never give up!'
+            break
+    }
+    positiveMessage = true
 }
 
 // Button event listeners for basic calculating
@@ -133,6 +170,8 @@ operators.forEach(element => element.addEventListener('click', buttonPress))
 document.querySelector('.equals').addEventListener('click', equalsPress)
 document.querySelector('.backspace').addEventListener('click', backspacePress)
 document.querySelector('.decimal').addEventListener('click', decimalPress)
+document.querySelector('.negative').addEventListener('click', negativePress)
+document.querySelector('.happy').addEventListener('click', happyPress)
 
 // Clear button
 function clearScreen(e){
@@ -142,24 +181,30 @@ function clearScreen(e){
     ops = []
     nums = []
     tempNum = ''
+    returnLength = []
     equation.style.fontSize = '2rem'
-    console.log('Hi')
     document.querySelector('.clear').blur()
+    positiveMessage = false
 }
 
 document.querySelector('.clear').addEventListener('click', clearScreen)
 
 // Font size function for equation div - if it tries to wrap then decrease the font size
+let returnLength = [] // Will be stored once reached the first time
+let resultScreen = document.querySelector('.resultScreen')
+let resultScreen_cutoff = parseFloat(getComputedStyle(resultScreen)['width'].replace('px', '')) - 24
+
 function fontSizeAdjust(div){
-    if((div.offsetHeight > priorOffsetHeight) && (priorOffsetHeight > 0)){
+    if(parseFloat(getComputedStyle(equation)['width'].replace('px', '')) > resultScreen_cutoff){
+        returnLength.push(equation.textContent.length)
         currSize = parseInt(getComputedStyle(div)['font-size'].slice(0, -2))
         newSize = currSize / 2 + 'px'
         div.style.fontSize = newSize
     }
-    else if((div.offsetHeight < priorOffsetHeight) && (div.offsetHeight > 0)){
+    else if(equation.textContent.length < returnLength[returnLength.length-1]){
         currSize = parseInt(getComputedStyle(div)['font-size'].slice(0, -2))
         newSize = currSize * 2 + 'px'
         div.style.fontSize = newSize
+        returnLength.pop()
     }
-    priorOffsetHeight = div.offsetHeight
 }
